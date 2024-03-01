@@ -1,0 +1,130 @@
+# This Cloudformation template to create the following AWS artifacts:
+  # 1- AWS IAM Role for AWS Glue Job
+  # 2- AWS Glue job to process the raw data files
+  # 3- AWS Glue Crawler to crawl and catalog the curated data
+  # 4- AWS Triiger to schedule AWS Glue Job
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Cloudformation Template to create AWS Crawler, S3, and Glue Job.'
+
+# Set :param values
+Parameters:
+  AWSIAMRoleName:
+    Description: Role Name for AWS Glue Job
+    Type: String
+    Default: data-pipeline-demo
+  AWSGlueJobName:
+    Description: AWS Glue Job Name
+    Type: String
+    Default: data-pipeline-etl-demo
+  AWSGlueCrawlerName:
+    Description: AWS Glue Crawler name
+    Type: String
+    Default: data-crawler
+  AWSGlueCatalogName:
+    Description: Name of the data Catalog database
+    Type: String
+    Default: worlds-billionaires
+  AWSGlueJobTriggerName:
+    Description: AWS Glue job schedule trigger name
+    Type: String
+    Default: data-pipeline-glue-trigger
+  # Replace the following values with your S3 bucket
+  GlueJobScriptLocation:
+    Description: AWS Glue job script location
+    Type: String
+    Default: 's3://data-ingestion-pipeline-demo6157/scripts/glue-etl-process.py'
+  CrawlerS3Path:
+    Description: Target file name for AWS Crawler
+    Type: String
+    Default: 's3://data-ingestion-pipeline-demo6157/curated-data/'
+
+Resources:
+#Creating IAM Role and attaching build-in policies
+  AWSIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref AWSIAMRoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - glue.amazonaws.com
+            - s3.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Path: "/"
+
+#Create CUR Database
+  AWSGlueCatalog:
+    Type: 'AWS::Glue::Database'
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Ref AWSGlueCatalogName
+        Description: Database for AWS CUR Data
+
+#Create AWS Glue job 
+  AWSGlueJob:
+    Type: AWS::Glue::Job
+    Properties: 
+      Command:
+        Name: glueetl
+        PythonVersion: '3'
+        ScriptLocation: !Ref GlueJobScriptLocation
+      ExecutionProperty:
+        MaxConcurrentRuns: 2
+      MaxRetries: 0
+      Role: !Ref AWSIAMRole
+      Name: !Ref AWSGlueJobName
+      GlueVersion: '3.0'
+      WorkerType: 'G.1X'
+      NumberOfWorkers: 10
+
+#Update the trigger based on your use case. 
+#Currently, it's scheduled to run every morning at 7 am.
+  AWSGlueJobScheduleRule:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Type: SCHEDULED
+      Description: Schedule a glue job to run every morning at 7 AM.
+      Schedule: cron(0 7 ? * * *)
+      Actions:
+        - JobName: !Ref AWSGlueJobName
+      Name: !Ref AWSGlueJobTriggerName
+      StartOnCreation: True
+
+#Create AWS Glue CUR Crawler
+  AWSGlueCrawler:
+    Type: 'AWS::Glue::Crawler'
+    Properties:
+      Name: !Ref AWSGlueCrawlerName
+      Role: !GetAtt "AWSIAMRole.Arn"
+      DatabaseName: !Ref AWSGlueCatalogName
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Targets:
+        S3Targets:
+          - Path: !Ref CrawlerS3Path
+
+Outputs:
+  AWSIAMRole:
+     Description: IAM Role created using CloudFormation Template.
+     Value: !Ref AWSIAMRole
+  AWSGlueCatalog:
+     Description: AWS Glue Job created using CloudFormation Template.
+     Value: !Ref AWSGlueCatalog
+  AWSGlueJob:
+     Description: AWS Glue Database created using CloudFormation Template.
+     Value: !Ref AWSGlueJob
+  AWSGlueJobScheduleRule:
+     Description: AWS Glue Job schedule created using CloudFormation Template.
+     Value: !Ref AWSGlueJobScheduleRule
+  AWSGlueCrawler:
+    Description: AWS Crawler created using CloudFormation Template.
+    Value: !Ref AWSGlueCrawler
