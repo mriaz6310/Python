@@ -16,21 +16,16 @@ job.init(args["JOB_NAME"], args)
 
 # Set param values
 region= "us-east-2"
-# Replace following :param values with your S3 bucket path
+#S3 bucket path
 source_file_path= "s3://data-ingestion-pipeline-demo6157/raw/Test.csv"
 target_file_path= "s3://data-ingestion-pipeline-demo6157/curated-data/"
-# Crawler name should match with the name mentioned in CloudFormation template
+# Crawler name as in CloudFormation template
 glueCrawler_name= "data-crawler"
 
 def process_csv_files(source_file_path: str, target_file_path: str):
     """Process CSV data files and convert to parquet format
 
-    Args:
-        source_file_path (str): S3 source file path
-        target_file_path (str): Target S3 path for process files
-        
-    Raises:
-        NONE
+  
     """
 
     # Script generated for node S3 bucket
