@@ -29,7 +29,7 @@ Parameters:
     Description: AWS Glue job schedule trigger name
     Type: String
     Default: data-pipeline-glue-trigger
-  # Replace the following values with your S3 bucket
+  # S3 bucket values
   GlueJobScriptLocation:
     Description: AWS Glue job script location
     Type: String
