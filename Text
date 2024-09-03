@@ -1,0 +1,24 @@
+Our current architecture has about seven pipelines that use a couple of AWS MS including AWS sagemaker , s3 bucket , cron jobs for scheduling and AWS redshift for data tables. We are looking at the following AWS services, AWS glue read and write ops , AWS cloud watch for pipeline monitoring , now called event bridge , lambda functions and some enhanced features of sagemaker.
+1. Migrating to AWS Glue
+Data Integration: AWS Glue can automate the ETL (Extract, Transform, Load) process for your data. You can define jobs in AWS Glue that correspond to your current Python scripts. These jobs can then be scheduled and executed as needed.
+Data Cataloging: Glue can catalog your data, making it easier to query and analyze later with services like Athena.
+
+2. Monitoring with AWS CloudWatch
+Custom Metrics: Set up CloudWatch to track custom metrics from your pipelines. For example, you could send success/failure statuses, processing times, or data volume processed to CloudWatch.
+CloudWatch Logs: Instead of updating log files manually, you can send logs directly to CloudWatch Logs from your Python scripts or Glue jobs, making it easier to monitor and troubleshoot issues.
+Alarms and Notifications: Configure CloudWatch Alarms to notify you (via SNS) if something goes wrong in any of your pipelines. You can set alarms on specific metrics or on specific log messages (like errors).
+3. Enhancing SageMaker Monitoring
+SageMaker Processing Jobs: We also have our current scripts on AWS sagemaker, we use sagemaker to run our python scripts, we are considering using SageMaker Processing Jobs. These allow you to run preprocessing or postprocessing workloads on SageMaker-managed infrastructure.
+Model Monitoring: We can possibly use SageMaker Model Monitor to track and alert on our scripts.
+
+4. Automation & Scheduling
+EventBridge Scheduler: Replace cron jobs with Amazon EventBridge (formerly CloudWatch Events) for more flexible and reliable scheduling. EventBridge can trigger Glue jobs, Step Functions, or Lambda functions based on time or other events.
+
+5. Data Pipeline Visualization
+AWS Glue Studio: Use Glue Studio for a visual representation of your ETL workflows. This could provide a more intuitive way to manage your data pipelines compared to manually editing scripts.
+This setup will enhance automation, improve monitoring, and provide better control over your data pipelines on AWS.
+
+6. Orchestration with AWS Step Functions (optional, could see if there are a few gaps after using AWS GLUE)
+Workflow Definition: we can use AWS Step Functions to define the workflow for each pipeline. This allows to break down your Python scripts into steps, each step being a function that can be executed independently.
+Error Handling: Step Functions can handle errors by defining fallback states, retries, and catch blocks within the workflow.
+Integration with Lambda: For smaller tasks or lightweight processing, you can use AWS Lambda within your Step Functions. Lambdas can perform tasks like triggering Glue jobs, processing data, or sending notifications.
